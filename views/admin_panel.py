@@ -53,46 +53,49 @@ async def _reject(interaction: discord.Interaction) -> bool:
 # ─── Main Panel View ────────────────────────────────────────────────────────
 
 class AdminPanelView(ui.View):
-    """Root view for the admin panel with section buttons."""
+    """Root view for the admin panel with a dropdown select menu."""
 
     def __init__(self, bot: NJRPBot) -> None:
         super().__init__(timeout=300)
         self.bot = bot
 
-    @ui.button(label="Member Management", style=discord.ButtonStyle.primary, emoji="👤", row=0)
-    async def member_management(self, interaction: discord.Interaction, button: ui.Button) -> None:
+    @ui.select(
+        placeholder="Select a section...",
+        options=[
+            discord.SelectOption(label="Member Management", value="member", emoji="👤", description="Search members, view info, manage flags & blacklist"),
+            discord.SelectOption(label="Command Management", value="command", emoji="⚙️", description="Enable or disable commands and events"),
+            discord.SelectOption(label="Server Management", value="server", emoji="🖥️", description="Server analytics & emergency lockdown"),
+        ],
+    )
+    async def section_select(self, interaction: discord.Interaction, select: ui.Select) -> None:
         if await _reject(interaction):
             return
-        await interaction.response.send_message(
-            embed=info_embed(
-                "Member Management",
-                "Enter a Discord User ID or @mention to search for a member.",
-            ),
-            view=MemberSearchView(self.bot),
-            ephemeral=True,
-        )
 
-    @ui.button(label="Command Management", style=discord.ButtonStyle.primary, emoji="⚙️", row=0)
-    async def command_management(self, interaction: discord.Interaction, button: ui.Button) -> None:
-        if await _reject(interaction):
-            return
-        embed = await self._build_command_embed()
-        await interaction.response.send_message(
-            embed=embed,
-            view=CommandManagementView(self.bot),
-            ephemeral=True,
-        )
+        choice = select.values[0]
 
-    @ui.button(label="Server Management", style=discord.ButtonStyle.primary, emoji="🖥️", row=0)
-    async def server_management(self, interaction: discord.Interaction, button: ui.Button) -> None:
-        if await _reject(interaction):
-            return
-        embed = await self._build_server_embed(interaction)
-        await interaction.response.send_message(
-            embed=embed,
-            view=ServerManagementView(self.bot),
-            ephemeral=True,
-        )
+        if choice == "member":
+            await interaction.response.send_message(
+                embed=info_embed(
+                    "Member Management",
+                    "Enter a Discord User ID or @mention to search for a member.",
+                ),
+                view=MemberSearchView(self.bot),
+                ephemeral=True,
+            )
+        elif choice == "command":
+            embed = await self._build_command_embed()
+            await interaction.response.send_message(
+                embed=embed,
+                view=CommandManagementView(self.bot),
+                ephemeral=True,
+            )
+        elif choice == "server":
+            embed = await self._build_server_embed(interaction)
+            await interaction.response.send_message(
+                embed=embed,
+                view=ServerManagementView(self.bot),
+                ephemeral=True,
+            )
 
     async def _build_command_embed(self) -> discord.Embed:
         cmd_states = await self.bot.db.get_all_command_states()
