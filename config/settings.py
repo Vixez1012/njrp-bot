@@ -47,6 +47,12 @@ SESSION_ROLE_IDS: list[int] = [
     # 123456789012345678,  # Example: Session Host Role
 ]
 
+# ─── Session Config Command Authorized Role IDs ─────────────────────────────
+# Separate from SESSION_ROLE_IDS — controls who can use /config session.
+SESSION_CONFIG_ROLE_IDS: list[int] = [
+    # 123456789012345678,  # Example: Admin Role
+]
+
 # ─── Staff Roles (removed during lockdown) ───────────────────────────────────
 STAFF_ROLE_IDS: list[int] = [
     # 123456789012345678,  # Example: Staff Role

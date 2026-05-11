@@ -113,7 +113,8 @@ Open `config/settings.py` and fill in:
 - **`JSK_AUTHORIZED_USERS`** — Discord User IDs allowed to use Jishaku debug commands
 - **`ADMIN_PANEL_ROLE_IDS`** — Role IDs that can access the admin panel
 - **`INFRACTION_ROLE_IDS`** — Role IDs that can issue infractions
-- **`SESSION_ROLE_IDS`** — Role IDs that can use session commands
+- **`SESSION_ROLE_IDS`** — Role IDs that can use `/session` commands
+- **`SESSION_CONFIG_ROLE_IDS`** — Role IDs that can use `/config session` (separate from session hosts)
 - **`STAFF_ROLE_IDS`** — Role IDs removed during emergency lockdown
 
 ### 6. Run the Bot
@@ -127,7 +128,7 @@ python bot.py
 | Value | Location |
 |---|---|
 | Bot Token | `.env` → `BOT_TOKEN` |
-| Role IDs (Admin, Infraction, Session, Staff) | `config/settings.py` |
+| Role IDs (Admin, Infraction, Session, Session Config, Staff) | `config/settings.py` |
 | Channel IDs (Infraction Log) | `.env` → `INFRACTION_LOG_CHANNEL_ID` |
 | ERLC API Key | `.env` → `ERLC_API_KEY` |
 | ERLC Server ID | `.env` → `ERLC_SERVER_ID` |
