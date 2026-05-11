@@ -4,7 +4,8 @@ Session system cog.
 Slash command: /session <option>
 Options: SSU, SSD, Vote, Low, Full
 
-Sends configurable embeds to a configured channel with optional role pings.
+Sends configurable embeds (Components V2) to a configured channel with
+optional role pings.
 """
 
 from __future__ import annotations
@@ -130,7 +131,7 @@ class Sessions(commands.Cog):
         image_key = f"{session_key}_image"
         image_url = config[image_key] if image_key in config.keys() else ""
 
-        # Build v2 layout matching reference design
+        # Build v2 layout
         container_children: list[ui.Item] = []
 
         # Banner image at top (if configured)
@@ -144,7 +145,7 @@ class Sessions(commands.Cog):
             ui.Section(
                 ui.TextDisplay(f"**NJRP | Session {meta['status']}**"),
                 accessory=ui.Thumbnail(AUTHOR_ICON_URL),
-            ),
+            )
         )
 
         # Description text
