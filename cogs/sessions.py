@@ -34,7 +34,7 @@ SESSION_TYPES = {
     "full": {"title": "Server Full", "status": "Full"},
 }
 
-AUTHOR_ICON_URL = "https://cdn.discordapp.com/attachments/1439278986621620327/1472350625571541205/image.png?ex=699a29e0&is=6998d860&hm=c49ba2621f6c0020d0046b331c9cc10ca77b8b326299714c85db33e97c6038e4&"
+AUTHOR_ICON_URL = "https://cdn.discordapp.com/attachments/1403383327108501534/1471846322335125555/image.png?ex=6a031db4&is=6a01cc34&hm=7e0894370018ed310d000bc6d05f5576e5ed0fc130f5118d8d947245c8466e56&"
 
 SESSION_FOOTER_IMAGE_URL = "https://cdn.discordapp.com/attachments/1483408064945328220/1483413466856292392/image.png?ex=6a030272&is=6a01b0f2&hm=c7216d6fc525351d5ddfb1f464d98c2b6e901af444eb53a2d6db5c1cb0e7d9e7&"
 
@@ -138,15 +138,18 @@ class Sessions(commands.Cog):
             container_children.append(
                 ui.MediaGallery(discord.MediaGalleryItem(media=image_url))
             )
-            container_children.append(
-                ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small)
-            )
 
-        # Session title and description
+        # Section: session title with author icon thumbnail
         container_children.append(
-            ui.TextDisplay(
-                f"**NJRP | Session {meta['status']}**\n\n{text}"
+            ui.Section(
+                ui.TextDisplay(f"**NJRP | Session {meta['status']}**"),
+                accessory=ui.Thumbnail(AUTHOR_ICON_URL),
             ),
+        )
+
+        # Description text
+        container_children.append(
+            ui.TextDisplay(text)
         )
 
         # Server info
@@ -157,16 +160,12 @@ class Sessions(commands.Cog):
             )
         )
 
+        # Separator before button and footer image
         container_children.append(
             ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small)
         )
 
-        # Hardcoded footer image
-        container_children.append(
-            ui.MediaGallery(discord.MediaGalleryItem(media=SESSION_FOOTER_IMAGE_URL))
-        )
-
-        # Join link button (bottom)
+        # Join link button
         container_children.append(
             ui.ActionRow(
                 ui.Button(
@@ -175,6 +174,11 @@ class Sessions(commands.Cog):
                     style=discord.ButtonStyle.link,
                 )
             )
+        )
+
+        # Hardcoded footer image
+        container_children.append(
+            ui.MediaGallery(discord.MediaGalleryItem(media=SESSION_FOOTER_IMAGE_URL))
         )
 
         container = ui.Container(
