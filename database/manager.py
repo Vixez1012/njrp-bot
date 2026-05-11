@@ -118,7 +118,12 @@ class DatabaseManager:
                 ssd_text         TEXT    DEFAULT 'The server is shutting down. Thank you for playing!',
                 vote_text        TEXT    DEFAULT 'Vote for a session! React to participate.',
                 low_text         TEXT    DEFAULT 'Player count is low. Join the server!',
-                full_text        TEXT    DEFAULT 'The server is full! Please wait for a slot.'
+                full_text        TEXT    DEFAULT 'The server is full! Please wait for a slot.',
+                ssu_image        TEXT    DEFAULT '',
+                ssd_image        TEXT    DEFAULT '',
+                vote_image       TEXT    DEFAULT '',
+                low_image        TEXT    DEFAULT '',
+                full_image       TEXT    DEFAULT ''
             );
 
             CREATE TABLE IF NOT EXISTS verification_codes (

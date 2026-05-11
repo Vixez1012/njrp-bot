@@ -67,6 +67,14 @@ class SessionConfig(commands.Cog):
             embed.add_field(name="Embed Color", value=f"`#{config['embed_color']:06X}`" if config["embed_color"] else "Default", inline=True)
             embed.add_field(name="Vote Threshold", value=str(config["vote_threshold"]), inline=True)
             embed.add_field(name="Cooldown", value=f"{config['cooldown_seconds']}s", inline=True)
+
+            image_keys = ["ssu_image", "ssd_image", "vote_image", "low_image", "full_image"]
+            image_labels = ["SSU", "SSD", "Vote", "Low", "Full"]
+            image_lines: list[str] = []
+            for label, key in zip(image_labels, image_keys):
+                val = config[key] if key in config.keys() else ""
+                image_lines.append(f"**{label}:** {'Set' if val else 'Not set'}")
+            embed.add_field(name="Session Images", value="\n".join(image_lines), inline=False)
         else:
             embed.description = "No session configuration found. Use the buttons below to set up."
 
@@ -105,6 +113,10 @@ class SessionConfigView(ui.View):
     @ui.button(label="Set Session Texts", style=discord.ButtonStyle.secondary, row=1)
     async def set_texts(self, interaction: discord.Interaction, button: ui.Button) -> None:
         await interaction.response.send_modal(SetSessionTextsModal(self.bot))
+
+    @ui.button(label="Set Session Images", style=discord.ButtonStyle.secondary, row=2)
+    async def set_images(self, interaction: discord.Interaction, button: ui.Button) -> None:
+        await interaction.response.send_modal(SetSessionImagesModal(self.bot))
 
 
 class SetChannelModal(ui.Modal, title="Set Session Channel"):
@@ -247,6 +259,39 @@ class SetSessionTextsModal(ui.Modal, title="Set Session Texts"):
             await self.bot.db.upsert_session_config(guild.id, **updates)
 
         await interaction.response.send_message(embed=success_embed("Texts Updated", "Session texts have been updated."), ephemeral=True)
+
+
+class SetSessionImagesModal(ui.Modal, title="Set Session Images"):
+    ssu_image = ui.TextInput(label="SSU Image URL", required=False, placeholder="https://example.com/ssu.png")
+    ssd_image = ui.TextInput(label="SSD Image URL", required=False, placeholder="https://example.com/ssd.png")
+    vote_image = ui.TextInput(label="Vote Image URL", required=False, placeholder="https://example.com/vote.png")
+    low_image = ui.TextInput(label="Low Image URL", required=False, placeholder="https://example.com/low.png")
+    full_image = ui.TextInput(label="Full Image URL", required=False, placeholder="https://example.com/full.png")
+
+    def __init__(self, bot: NJRPBot) -> None:
+        super().__init__()
+        self.bot = bot
+
+    async def on_submit(self, interaction: discord.Interaction) -> None:
+        guild = interaction.guild
+        if guild is None:
+            return
+        updates: dict[str, str] = {}
+        if self.ssu_image.value:
+            updates["ssu_image"] = self.ssu_image.value.strip()
+        if self.ssd_image.value:
+            updates["ssd_image"] = self.ssd_image.value.strip()
+        if self.vote_image.value:
+            updates["vote_image"] = self.vote_image.value.strip()
+        if self.low_image.value:
+            updates["low_image"] = self.low_image.value.strip()
+        if self.full_image.value:
+            updates["full_image"] = self.full_image.value.strip()
+
+        if updates:
+            await self.bot.db.upsert_session_config(guild.id, **updates)
+
+        await interaction.response.send_message(embed=success_embed("Images Updated", "Session images have been updated."), ephemeral=True)
 
 
 async def setup(bot: NJRPBot) -> None:
