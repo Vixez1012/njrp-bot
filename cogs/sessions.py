@@ -161,7 +161,12 @@ class Sessions(commands.Cog):
             ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small)
         )
 
-        # Join link button
+        # Hardcoded footer image
+        container_children.append(
+            ui.MediaGallery(discord.MediaGalleryItem(media=SESSION_FOOTER_IMAGE_URL))
+        )
+
+        # Join link button (bottom)
         container_children.append(
             ui.ActionRow(
                 ui.Button(
@@ -170,11 +175,6 @@ class Sessions(commands.Cog):
                     style=discord.ButtonStyle.link,
                 )
             )
-        )
-
-        # Hardcoded footer image
-        container_children.append(
-            ui.MediaGallery(discord.MediaGalleryItem(media=SESSION_FOOTER_IMAGE_URL))
         )
 
         container = ui.Container(
