@@ -27,12 +27,14 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 SESSION_TYPES = {
-    "ssu": {"title": "Server Startup", "emoji": "🟢"},
-    "ssd": {"title": "Server Shutdown", "emoji": "🔴"},
-    "vote": {"title": "Vote Session", "emoji": "🗳️"},
-    "low": {"title": "Low Player Count", "emoji": "⚠️"},
-    "full": {"title": "Server Full", "emoji": "🔵"},
+    "ssu": {"title": "Server Startup", "status": "Startup"},
+    "ssd": {"title": "Server Shutdown", "status": "Shutdown"},
+    "vote": {"title": "Vote Session", "status": "Vote"},
+    "low": {"title": "Low Player Count", "status": "Low"},
+    "full": {"title": "Server Full", "status": "Full"},
 }
+
+AUTHOR_ICON_URL = "https://cdn.discordapp.com/attachments/1439278986621620327/1472350625571541205/image.png?ex=699a29e0&is=6998d860&hm=c49ba2621f6c0020d0046b331c9cc10ca77b8b326299714c85db33e97c6038e4&"
 
 # In-memory cooldown tracking: guild_id -> last_used_timestamp
 _cooldowns: dict[int, float] = {}
@@ -122,13 +124,38 @@ class Sessions(commands.Cog):
         text = config[text_key] if text_key in config.keys() else f"{meta['title']} announcement."
         color = config["embed_color"] or EMBED_COLOR_INFO
 
+        # Build embed with custom format
         embed = discord.Embed(
-            title=f"{meta['emoji']}  {meta['title']}",
             description=text,
             color=color,
         )
-        embed.set_footer(text=f"Announced by {interaction.user.display_name}")
-        embed.timestamp = discord.utils.utcnow()
+        embed.set_author(
+            name=f"NJRP | Session {meta['status']}",
+            icon_url=AUTHOR_ICON_URL,
+        )
+
+        # Per-session-type image
+        image_key = f"{session_key}_image"
+        image_url = config[image_key] if image_key in config.keys() else ""
+        if image_url:
+            embed.set_image(url=image_url)
+
+        # Inline fields
+        embed.add_field(
+            name="<:Regulations:1446219196009550108> Server Name",
+            value="**New Jersey Roleplay**",
+            inline=True,
+        )
+        embed.add_field(
+            name="Server Owner",
+            value="**Boltiscool1000**",
+            inline=True,
+        )
+        embed.add_field(
+            name="<:Session:1442980201687679048> Server Code",
+            value="[**NewJerseyX**](https://policeroleplay.community/join/NewJerseyX)",
+            inline=True,
+        )
 
         # Build ping string
         ping_roles_raw = config["ping_roles"] or "[]"
