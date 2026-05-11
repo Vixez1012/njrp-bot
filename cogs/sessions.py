@@ -15,7 +15,7 @@ import time
 from typing import TYPE_CHECKING
 
 import discord
-from discord import app_commands
+from discord import app_commands, ui
 from discord.ext import commands
 
 from config.settings import SESSION_ROLE_IDS, EMBED_COLOR_INFO
@@ -124,45 +124,49 @@ class Sessions(commands.Cog):
         text = config[text_key] if text_key in config.keys() else f"{meta['title']} announcement."
         color = config["embed_color"] or EMBED_COLOR_INFO
 
-        # Build embed with custom format
-        embed = discord.Embed(
-            description=text,
-            color=color,
-        )
-        embed.set_author(
-            name=f"NJRP | Session {meta['status']}",
-            icon_url=AUTHOR_ICON_URL,
-        )
-
         # Per-session-type image
         image_key = f"{session_key}_image"
         image_url = config[image_key] if image_key in config.keys() else ""
-        if image_url:
-            embed.set_image(url=image_url)
 
-        # Inline fields
-        embed.add_field(
-            name="<:Regulations:1446219196009550108> Server Name",
-            value="**New Jersey Roleplay**",
-            inline=True,
+        # Build v2 layout
+        container_children: list[ui.Item] = [
+            ui.Section(
+                ui.TextDisplay(f"**NJRP | Session {meta['status']}**"),
+                accessory=ui.Thumbnail(AUTHOR_ICON_URL),
+            ),
+            ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small),
+            ui.TextDisplay(text),
+            ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small),
+            ui.TextDisplay(
+                "<:Regulations:1446219196009550108> **Server Name:** New Jersey Roleplay\n"
+                "**Server Owner:** Boltiscool1000\n"
+                "<:Session:1442980201687679048> **Server Code:** "
+                "[NewJerseyX](https://policeroleplay.community/join/NewJerseyX)"
+            ),
+        ]
+
+        if image_url:
+            container_children.append(
+                ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small)
+            )
+            container_children.append(
+                ui.MediaGallery(discord.MediaGalleryItem(media=image_url))
+            )
+
+        container = ui.Container(
+            *container_children,
+            accent_colour=color,
         )
-        embed.add_field(
-            name="Server Owner",
-            value="**Boltiscool1000**",
-            inline=True,
-        )
-        embed.add_field(
-            name="<:Session:1442980201687679048> Server Code",
-            value="[**NewJerseyX**](https://policeroleplay.community/join/NewJerseyX)",
-            inline=True,
-        )
+
+        layout = ui.LayoutView()
+        layout.add_item(container)
 
         # Build ping string
         ping_roles_raw = config["ping_roles"] or "[]"
         ping_role_ids: list[int] = json.loads(ping_roles_raw)
         pings = " ".join(f"<@&{rid}>" for rid in ping_role_ids)
 
-        await channel.send(content=pings or None, embed=embed)
+        await channel.send(content=pings or None, view=layout)
         _cooldowns[guild.id] = now
 
         await interaction.response.send_message(
