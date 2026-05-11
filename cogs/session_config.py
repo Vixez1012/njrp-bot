@@ -16,7 +16,7 @@ import discord
 from discord import app_commands, ui
 from discord.ext import commands
 
-from config.settings import SESSION_ROLE_IDS
+from config.settings import SESSION_CONFIG_ROLE_IDS
 from utils.embeds import success_embed, error_embed, info_embed
 
 if TYPE_CHECKING:
@@ -25,10 +25,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def _has_session_role(interaction: discord.Interaction) -> bool:
+def _has_session_config_role(interaction: discord.Interaction) -> bool:
     if not isinstance(interaction.user, discord.Member):
         return False
-    return any(role.id in SESSION_ROLE_IDS for role in interaction.user.roles)
+    return any(role.id in SESSION_CONFIG_ROLE_IDS for role in interaction.user.roles)
 
 
 class SessionConfig(commands.Cog):
@@ -41,7 +41,7 @@ class SessionConfig(commands.Cog):
 
     @config_group.command(name="session", description="Configure the session system")
     async def config_session(self, interaction: discord.Interaction) -> None:
-        if not _has_session_role(interaction):
+        if not _has_session_config_role(interaction):
             await interaction.response.send_message(
                 embed=error_embed("Access Denied", "You do not have permission to use this command."),
                 ephemeral=True,
