@@ -128,30 +128,50 @@ class Sessions(commands.Cog):
         image_key = f"{session_key}_image"
         image_url = config[image_key] if image_key in config.keys() else ""
 
-        # Build v2 layout
-        container_children: list[ui.Item] = [
-            ui.Section(
-                ui.TextDisplay(f"**NJRP | Session {meta['status']}**"),
-                accessory=ui.Thumbnail(AUTHOR_ICON_URL),
-            ),
-            ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small),
-            ui.TextDisplay(text),
-            ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small),
-            ui.TextDisplay(
-                "<:Regulations:1446219196009550108> **Server Name:** New Jersey Roleplay\n"
-                "**Server Owner:** Boltiscool1000\n"
-                "<:Session:1442980201687679048> **Server Code:** "
-                "[NewJerseyX](https://policeroleplay.community/join/NewJerseyX)"
-            ),
-        ]
+        # Build v2 layout matching reference design
+        container_children: list[ui.Item] = []
 
+        # Banner image at top (if configured)
         if image_url:
-            container_children.append(
-                ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small)
-            )
             container_children.append(
                 ui.MediaGallery(discord.MediaGalleryItem(media=image_url))
             )
+            container_children.append(
+                ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small)
+            )
+
+        # Section: description text with NJRP icon thumbnail
+        container_children.append(
+            ui.Section(
+                ui.TextDisplay(
+                    f"**NJRP | Session {meta['status']}**\n\n{text}"
+                ),
+                accessory=ui.Thumbnail(AUTHOR_ICON_URL),
+            ),
+        )
+
+        # Server info
+        container_children.append(
+            ui.TextDisplay(
+                "• <:Regulations:1446219196009550108> **Server Name:** New Jersey Roleplay\n"
+                "• **Server Owner:** Boltiscool1000"
+            )
+        )
+
+        container_children.append(
+            ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small)
+        )
+
+        # Join link button
+        container_children.append(
+            ui.ActionRow(
+                ui.Button(
+                    label="Server Code: NewJerseyX",
+                    url="https://policeroleplay.community/join/NewJerseyX",
+                    style=discord.ButtonStyle.link,
+                )
+            )
+        )
 
         container = ui.Container(
             *container_children,
