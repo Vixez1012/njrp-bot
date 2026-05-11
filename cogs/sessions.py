@@ -161,12 +161,14 @@ class Sessions(commands.Cog):
         layout = ui.LayoutView()
         layout.add_item(container)
 
-        # Build ping string
+        # Build ping string and send as separate message (content not allowed with v2)
         ping_roles_raw = config["ping_roles"] or "[]"
         ping_role_ids: list[int] = json.loads(ping_roles_raw)
         pings = " ".join(f"<@&{rid}>" for rid in ping_role_ids)
 
-        await channel.send(content=pings or None, view=layout)
+        if pings:
+            await channel.send(content=pings)
+        await channel.send(view=layout)
         _cooldowns[guild.id] = now
 
         await interaction.response.send_message(
