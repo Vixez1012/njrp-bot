@@ -36,6 +36,8 @@ SESSION_TYPES = {
 
 AUTHOR_ICON_URL = "https://cdn.discordapp.com/attachments/1439278986621620327/1472350625571541205/image.png?ex=699a29e0&is=6998d860&hm=c49ba2621f6c0020d0046b331c9cc10ca77b8b326299714c85db33e97c6038e4&"
 
+SESSION_FOOTER_IMAGE_URL = "https://cdn.discordapp.com/attachments/1483408064945328220/1483413466856292392/image.png?ex=6a030272&is=6a01b0f2&hm=c7216d6fc525351d5ddfb1f464d98c2b6e901af444eb53a2d6db5c1cb0e7d9e7&"
+
 # In-memory cooldown tracking: guild_id -> last_used_timestamp
 _cooldowns: dict[int, float] = {}
 
@@ -140,13 +142,10 @@ class Sessions(commands.Cog):
                 ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small)
             )
 
-        # Section: description text with NJRP icon thumbnail
+        # Session title and description
         container_children.append(
-            ui.Section(
-                ui.TextDisplay(
-                    f"**NJRP | Session {meta['status']}**\n\n{text}"
-                ),
-                accessory=ui.Thumbnail(AUTHOR_ICON_URL),
+            ui.TextDisplay(
+                f"**NJRP | Session {meta['status']}**\n\n{text}"
             ),
         )
 
@@ -171,6 +170,11 @@ class Sessions(commands.Cog):
                     style=discord.ButtonStyle.link,
                 )
             )
+        )
+
+        # Hardcoded footer image
+        container_children.append(
+            ui.MediaGallery(discord.MediaGalleryItem(media=SESSION_FOOTER_IMAGE_URL))
         )
 
         container = ui.Container(
