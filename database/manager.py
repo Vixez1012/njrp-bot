@@ -47,6 +47,24 @@ class DatabaseManager:
     # ─── Table Creation ──────────────────────────────────────────────────
 
     async def _create_tables(self) -> None:
+        await self._create_schema()
+        await self._run_migrations()
+
+    async def _run_migrations(self) -> None:
+        """Add columns that may be missing in databases created before updates."""
+        image_columns = [
+            "ssu_image", "ssd_image", "vote_image", "low_image", "full_image"
+        ]
+        for col in image_columns:
+            try:
+                await self.db.execute(
+                    f"ALTER TABLE session_config ADD COLUMN {col} TEXT DEFAULT ''"
+                )
+            except Exception:
+                pass  # Column already exists
+        await self.db.commit()
+
+    async def _create_schema(self) -> None:
         await self.db.executescript(
             """
             CREATE TABLE IF NOT EXISTS linked_accounts (
