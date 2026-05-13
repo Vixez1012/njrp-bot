@@ -52,13 +52,18 @@ class DatabaseManager:
 
     async def _run_migrations(self) -> None:
         """Add columns that may be missing in databases created before updates."""
-        image_columns = [
-            "ssu_image", "ssd_image", "vote_image", "low_image", "full_image"
+        migration_columns = [
+            ("ssu_image", "TEXT DEFAULT ''"),
+            ("ssd_image", "TEXT DEFAULT ''"),
+            ("vote_image", "TEXT DEFAULT ''"),
+            ("low_image", "TEXT DEFAULT ''"),
+            ("full_image", "TEXT DEFAULT ''"),
+            ("live_status_message_id", "INTEGER DEFAULT 0"),
         ]
-        for col in image_columns:
+        for col, col_type in migration_columns:
             try:
                 await self.db.execute(
-                    f"ALTER TABLE session_config ADD COLUMN {col} TEXT DEFAULT ''"
+                    f"ALTER TABLE session_config ADD COLUMN {col} {col_type}"
                 )
             except Exception:
                 pass  # Column already exists
@@ -141,7 +146,8 @@ class DatabaseManager:
                 ssd_image        TEXT    DEFAULT '',
                 vote_image       TEXT    DEFAULT '',
                 low_image        TEXT    DEFAULT '',
-                full_image       TEXT    DEFAULT ''
+                full_image       TEXT    DEFAULT '',
+                live_status_message_id INTEGER DEFAULT 0
             );
 
             CREATE TABLE IF NOT EXISTS verification_codes (

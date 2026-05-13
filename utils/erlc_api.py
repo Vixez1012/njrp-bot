@@ -57,6 +57,25 @@ class ERLCApi:
         """Fetch current server information."""
         return await self._request("GET", "")
 
+    async def get_server_status(self) -> Optional[dict]:
+        """Fetch server status with players and queue via v2 API."""
+        url = "https://api.erlc.gg/v2/server?Players=true&Queue=true"
+        try:
+            async with aiohttp.ClientSession() as session:
+                headers = {"server-key": self.api_key}
+                async with session.get(url, headers=headers) as resp:
+                    if resp.status == 200:
+                        return await resp.json()
+                    logger.error(
+                        "ERLC v2 API GET /v2/server returned %s: %s",
+                        resp.status,
+                        await resp.text(),
+                    )
+                    return None
+        except aiohttp.ClientError as exc:
+            logger.error("ERLC v2 API request failed: %s", exc)
+            return None
+
     async def get_players(self) -> Optional[list]:
         """Fetch the list of current players."""
         return await self._request("GET", "players")
