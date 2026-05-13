@@ -17,7 +17,7 @@ import discord
 from discord import app_commands, ui
 from discord.ext import commands, tasks
 
-from config.settings import SESSION_ROLE_IDS, EMBED_COLOR_INFO
+from config.settings import SESSION_CONFIG_ROLE_IDS, EMBED_COLOR_INFO
 from utils.embeds import error_embed
 from utils.erlc_api import ERLCApi
 
@@ -37,10 +37,10 @@ STAFF_ROLE_ID = 1446906296816107676  # Role checked for online staff count
 QUICK_JOIN_URL = "https://erlc.gg/join/NewJerseyX"
 
 
-def _has_session_role(interaction: discord.Interaction) -> bool:
+def _has_session_config_role(interaction: discord.Interaction) -> bool:
     if not isinstance(interaction.user, discord.Member):
         return False
-    return any(role.id in SESSION_ROLE_IDS for role in interaction.user.roles)
+    return any(role.id in SESSION_CONFIG_ROLE_IDS for role in interaction.user.roles)
 
 
 class SessionRoleButton(ui.Button):
@@ -195,7 +195,7 @@ class LiveSession(commands.Cog):
 
     @session_group.command(name="setup", description="Send the live session status panel")
     async def setup_live_status(self, interaction: discord.Interaction) -> None:
-        if not _has_session_role(interaction):
+        if not _has_session_config_role(interaction):
             await interaction.response.send_message(
                 embed=error_embed("Access Denied", "You do not have permission."),
                 ephemeral=True,
