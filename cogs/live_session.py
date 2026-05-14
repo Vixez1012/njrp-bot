@@ -28,7 +28,11 @@ logger = logging.getLogger(__name__)
 
 AUTHOR_ICON_URL = "https://cdn.discordapp.com/attachments/1403383327108501534/1471846322335125555/image.png?ex=6a031db4&is=6a01cc34&hm=7e0894370018ed310d000bc6d05f5576e5ed0fc130f5118d8d947245c8466e56&"
 
-SESSION_INFO_IMAGE_URL = "https://cdn.discordapp.com/attachments/1483408064945328220/1483413466856292392/image.png?ex=6a030272&is=6a01b0f2&hm=c7216d6fc525351d5ddfb1f464d98c2b6e901af444eb53a2d6db5c1cb0e7d9e7&"
+BANNER_IMAGE_URL = "https://cdn.discordapp.com/attachments/1471655726622572676/1504272251812581467/image.png?ex=6a066234&is=6a0510b4&hm=2af6faf32d35c73748854d75ec408811483aa6c37c664343c024501e4bd5ba6e&"
+
+SESSION_INFO_IMAGE_URL = "https://cdn.discordapp.com/attachments/1471655726622572676/1504272768202444830/image.png?ex=6a0662af&is=6a05112f&hm=75936fc63456267d98d9dd9ab41c74059e6b06ef0426f18845fee65b2608a3af&"
+
+FOOTER_IMAGE_URL = "https://cdn.discordapp.com/attachments/1354904708807921674/1504183718925832363/image.png?ex=6a060fc0&is=6a04be40&hm=ea9e80af9091966e2e3bd32aa9a647ea9f7ea8d5b959f46cfaea7c2af8e4a298&"
 
 # Role IDs
 SESSION_ROLE_TO_GIVE = 1446452632263589931  # Role given when clicking "Session Role"
@@ -103,8 +107,8 @@ def _build_live_embed(
     server_data: Optional[dict],
     online_staff_count: int,
     session_status: str,
-) -> tuple[discord.Embed, discord.Embed]:
-    """Build the live session status embeds (info + game status)."""
+) -> tuple[discord.Embed, discord.Embed, discord.Embed]:
+    """Build the live session status embeds (banner + info + game status)."""
     if server_data:
         current_players = server_data.get("CurrentPlayers", 0)
         max_players = server_data.get("MaxPlayers", 40)
@@ -116,6 +120,10 @@ def _build_live_embed(
         queue_count = 0
 
     now = discord.utils.format_dt(datetime.now(timezone.utc), style="F")
+
+    # Banner image embed (above everything)
+    banner_embed = discord.Embed(color=EMBED_COLOR_INFO)
+    banner_embed.set_image(url=BANNER_IMAGE_URL)
 
     embed = discord.Embed(color=EMBED_COLOR_INFO)
     embed.set_author(
@@ -168,7 +176,9 @@ def _build_live_embed(
         inline=True,
     )
 
-    return embed, game_embed
+    game_embed.set_image(url=FOOTER_IMAGE_URL)
+
+    return banner_embed, embed, game_embed
 
 
 class LiveSession(commands.Cog):
@@ -246,12 +256,12 @@ class LiveSession(commands.Cog):
             self._last_session_status = "Session Shutdown"
 
         staff_count = self._count_online_staff(guild)
-        embed, game_embed = _build_live_embed(
+        banner_embed, embed, game_embed = _build_live_embed(
             server_data, staff_count, self._last_session_status
         )
         view = LiveSessionView(is_online=is_online)
 
-        msg = await channel.send(embeds=[embed, game_embed], view=view)
+        msg = await channel.send(embeds=[banner_embed, embed, game_embed], view=view)
 
         # Save the message ID for future updates
         await self.bot.db.upsert_session_config(
@@ -325,12 +335,12 @@ class LiveSession(commands.Cog):
             self._last_session_status = "Session Shutdown"
 
         staff_count = self._count_online_staff(guild)
-        embed, game_embed = _build_live_embed(
+        banner_embed, embed, game_embed = _build_live_embed(
             server_data, staff_count, self._last_session_status
         )
         view = LiveSessionView(is_online=is_online)
 
-        await message.edit(embeds=[embed, game_embed], view=view)
+        await message.edit(embeds=[banner_embed, embed, game_embed], view=view)
 
 
 async def setup(bot: NJRPBot) -> None:
