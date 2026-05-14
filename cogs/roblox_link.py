@@ -13,6 +13,7 @@ from __future__ import annotations
 import logging
 import secrets
 from typing import TYPE_CHECKING, Optional
+from urllib.parse import urlencode
 
 import aiohttp
 from aiohttp import web
@@ -56,8 +57,7 @@ def _build_oauth_url(state: str) -> str:
         "scope": "openid profile",
         "state": state,
     }
-    query = "&".join(f"{k}={v}" for k, v in params.items())
-    return f"{ROBLOX_AUTH_URL}?{query}"
+    return f"{ROBLOX_AUTH_URL}?{urlencode(params)}"
 
 
 async def _exchange_code(code: str) -> Optional[dict]:
