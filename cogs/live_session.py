@@ -306,7 +306,7 @@ class LiveSession(commands.Cog):
         if config is None:
             return
 
-        message_id = config.get("live_status_message_id", 0)
+        message_id = config["live_status_message_id"]
         if not message_id:
             return
 
