@@ -22,6 +22,12 @@ ERLC_SERVER_ID: str = os.getenv("ERLC_SERVER_ID", "")
 # ─── Roblox ──────────────────────────────────────────────────────────────────
 ROBLOX_API_KEY: str = os.getenv("ROBLOX_API_KEY", "")
 
+# ─── Roblox OAuth 2.0 ────────────────────────────────────────────────────────
+ROBLOX_CLIENT_ID: str = os.getenv("ROBLOX_CLIENT_ID", "")
+ROBLOX_CLIENT_SECRET: str = os.getenv("ROBLOX_CLIENT_SECRET", "")
+ROBLOX_REDIRECT_URI: str = os.getenv("ROBLOX_REDIRECT_URI", "http://localhost:8080/roblox/callback")
+ROBLOX_OAUTH_PORT: int = int(os.getenv("ROBLOX_OAUTH_PORT", "8080"))
+
 # ─── Channels ────────────────────────────────────────────────────────────────
 INFRACTION_LOG_CHANNEL_ID: int = int(os.getenv("INFRACTION_LOG_CHANNEL_ID", "0"))
 
