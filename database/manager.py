@@ -155,6 +155,13 @@ class DatabaseManager:
                 code        TEXT    NOT NULL,
                 created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
             );
+
+            CREATE TABLE IF NOT EXISTS command_usage (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                command_name TEXT    NOT NULL,
+                user_id      INTEGER NOT NULL,
+                used_at      TEXT    NOT NULL DEFAULT (datetime('now'))
+            );
             """
         )
         await self.db.commit()
@@ -395,6 +402,29 @@ class DatabaseManager:
                 values,
             )
         await self.db.commit()
+
+    # ─── Command Usage Tracking ───────────────────────────────────────────
+
+    async def log_command_usage(self, command_name: str, user_id: int) -> None:
+        await self.db.execute(
+            "INSERT INTO command_usage (command_name, user_id, used_at) VALUES (?, ?, ?)",
+            (command_name, user_id, datetime.utcnow().isoformat()),
+        )
+        await self.db.commit()
+
+    async def get_commands_used_today(self) -> int:
+        today = datetime.utcnow().strftime("%Y-%m-%d")
+        async with self.db.execute(
+            "SELECT COUNT(*) FROM command_usage WHERE used_at >= ?",
+            (today,),
+        ) as cursor:
+            row = await cursor.fetchone()
+            return row[0] if row else 0
+
+    async def get_total_commands_used(self) -> int:
+        async with self.db.execute("SELECT COUNT(*) FROM command_usage") as cursor:
+            row = await cursor.fetchone()
+            return row[0] if row else 0
 
     # ─── Verification Codes ──────────────────────────────────────────────
 
