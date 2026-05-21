@@ -25,6 +25,7 @@ from config.settings import (
     EMBED_COLOR_ERROR,
     EMBED_COLOR_WARNING,
     GUILD_ID,
+    JSK_AUTHORIZED_USERS,
     STAFF_ROLE_IDS,
 )
 from utils.embeds import success_embed, error_embed, info_embed, primary_embed
@@ -67,6 +68,7 @@ class AdminPanelView(ui.View):
             discord.SelectOption(label="Member Management", value="member", emoji="👤", description="Search members, view info, manage flags & blacklist"),
             discord.SelectOption(label="Command Management", value="command", emoji="⚙️", description="Enable or disable commands and events"),
             discord.SelectOption(label="Server Management", value="server", emoji="🖥️", description="Server analytics & emergency lockdown"),
+            discord.SelectOption(label="Bot Management", value="bot", emoji="🤖", description="Bot analytics, servers, authorized users & leave server"),
         ],
     )
     async def section_select(self, interaction: discord.Interaction, select: ui.Select) -> None:
@@ -96,6 +98,13 @@ class AdminPanelView(ui.View):
             await interaction.response.send_message(
                 embed=embed,
                 view=ServerManagementView(self.bot),
+                ephemeral=True,
+            )
+        elif choice == "bot":
+            embed = await self._build_bot_embed()
+            await interaction.response.send_message(
+                embed=embed,
+                view=BotManagementView(self.bot),
                 ephemeral=True,
             )
 
@@ -128,6 +137,46 @@ class AdminPanelView(ui.View):
             value="\n".join(event_lines) if event_lines else "No events tracked.",
             inline=False,
         )
+        return embed
+
+    async def _build_bot_embed(self) -> discord.Embed:
+        bot = self.bot
+        total_cmds = len(list(bot.walk_commands()))
+        slash_cmds = len(bot.tree.get_commands())
+        cmds_today = await bot.db.get_commands_used_today()
+        total_used = await bot.db.get_total_commands_used()
+        linked_count = await bot.db.get_linked_count()
+
+        # Servers list
+        server_lines: list[str] = []
+        for g in bot.guilds:
+            server_lines.append(f"• **{g.name}** — {g.member_count} members (ID: `{g.id}`)")
+
+        # JSK authorized users
+        jsk_lines: list[str] = []
+        for uid in JSK_AUTHORIZED_USERS:
+            user = bot.get_user(uid)
+            jsk_lines.append(f"• {user} (`{uid}`)" if user else f"• Unknown (`{uid}`)")
+
+        embed = primary_embed("Bot Management")
+        embed.add_field(name="Prefix Commands", value=str(total_cmds), inline=True)
+        embed.add_field(name="Slash Commands", value=str(slash_cmds), inline=True)
+        embed.add_field(name="Commands Used Today", value=str(cmds_today), inline=True)
+        embed.add_field(name="Total Commands Used", value=str(total_used), inline=True)
+        embed.add_field(name="Linked Users", value=str(linked_count), inline=True)
+        embed.add_field(name="Server Count", value=str(len(bot.guilds)), inline=True)
+
+        embed.add_field(
+            name="Servers",
+            value="\n".join(server_lines) if server_lines else "None",
+            inline=False,
+        )
+        embed.add_field(
+            name="JSK Authorized Users",
+            value="\n".join(jsk_lines) if jsk_lines else "None configured",
+            inline=False,
+        )
+
         return embed
 
     async def _build_server_embed(self, interaction: discord.Interaction) -> discord.Embed:
@@ -513,6 +562,100 @@ class DepartmentBanReasonModal(ui.Modal, title="Ban Reason"):
         embed.description = "\n".join(results)
         embed.add_field(name="Reason", value=reason, inline=False)
         await interaction.followup.send(embed=embed, ephemeral=True)
+
+
+# ─── Bot Management ─────────────────────────────────────────────────────────
+
+class BotManagementView(ui.View):
+    """Actions for bot management: view server invites, leave a server."""
+
+    def __init__(self, bot: NJRPBot) -> None:
+        super().__init__(timeout=120)
+        self.bot = bot
+
+    @ui.button(label="View Server Invites", style=discord.ButtonStyle.secondary, row=0)
+    async def view_invites(self, interaction: discord.Interaction, button: ui.Button) -> None:
+        if await _reject(interaction):
+            return
+        await interaction.response.defer(ephemeral=True)
+        lines: list[str] = []
+        for guild in self.bot.guilds:
+            invite_url = None
+            try:
+                invites = await guild.invites()
+                if invites:
+                    invite_url = invites[0].url
+            except discord.Forbidden:
+                pass
+            if invite_url is None:
+                try:
+                    for channel in guild.text_channels:
+                        perms = channel.permissions_for(guild.me)
+                        if perms.create_instant_invite:
+                            inv = await channel.create_invite(max_age=0, max_uses=0, reason="Admin panel request")
+                            invite_url = inv.url
+                            break
+                except discord.Forbidden:
+                    pass
+            if invite_url:
+                lines.append(f"• **{guild.name}** — [Join]({invite_url})")
+            else:
+                lines.append(f"• **{guild.name}** — No invite available")
+
+        embed = primary_embed("Bot Server Invites")
+        embed.description = "\n".join(lines) if lines else "Bot is not in any servers."
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+    @ui.button(label="Leave Server", style=discord.ButtonStyle.danger, row=0)
+    async def leave_server(self, interaction: discord.Interaction, button: ui.Button) -> None:
+        if await _reject(interaction):
+            return
+        guilds = self.bot.guilds
+        if not guilds:
+            await interaction.response.send_message(
+                embed=error_embed("No Servers", "The bot is not in any servers."),
+                ephemeral=True,
+            )
+            return
+        options = [
+            discord.SelectOption(label=g.name[:100], value=str(g.id), description=f"{g.member_count} members")
+            for g in guilds[:25]
+        ]
+        await interaction.response.send_message(
+            embed=info_embed("Leave Server", "Select a server for the bot to leave."),
+            view=LeaveServerView(self.bot, options),
+            ephemeral=True,
+        )
+
+
+class LeaveServerView(ui.View):
+    def __init__(self, bot: NJRPBot, options: list[discord.SelectOption]) -> None:
+        super().__init__(timeout=60)
+        self.add_item(LeaveServerSelect(bot, options))
+
+
+class LeaveServerSelect(ui.Select):
+    def __init__(self, bot: NJRPBot, options: list[discord.SelectOption]) -> None:
+        super().__init__(placeholder="Select a server to leave...", options=options)
+        self.bot = bot
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        if await _reject(interaction):
+            return
+        guild_id = int(self.values[0])
+        guild = self.bot.get_guild(guild_id)
+        if guild is None:
+            await interaction.response.send_message(
+                embed=error_embed("Not Found", "Server not found."),
+                ephemeral=True,
+            )
+            return
+        name = guild.name
+        await guild.leave()
+        await interaction.response.send_message(
+            embed=success_embed("Left Server", f"The bot has left **{name}**."),
+            ephemeral=True,
+        )
 
 
 # ─── Command Management ─────────────────────────────────────────────────────

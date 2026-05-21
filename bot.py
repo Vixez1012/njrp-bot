@@ -108,6 +108,11 @@ class NJRPBot(commands.Bot):
         await self.change_presence(activity=activity)
         logger.info("Status set to: Watching New Jersey Roleplay")
 
+    async def on_command_completion(self, ctx: commands.Context) -> None:
+        """Track command usage for analytics."""
+        if ctx.command:
+            await self.db.log_command_usage(ctx.command.qualified_name, ctx.author.id)
+
     async def on_message(self, message: discord.Message) -> None:
         """Process messages, enforcing Jishaku authorization."""
         if message.author.bot:
