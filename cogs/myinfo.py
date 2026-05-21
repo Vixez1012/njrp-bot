@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 import discord
 from discord.ext import commands
 
+from config.settings import DEPARTMENT_GUILDS
 from utils.embeds import primary_embed
 
 if TYPE_CHECKING:
@@ -72,6 +73,29 @@ class MyInfo(commands.Cog):
         # Infractions & Blacklist
         embed.add_field(name="Infraction Count", value=str(infraction_count), inline=True)
         embed.add_field(name="Blacklisted", value="Yes" if is_bl else "No", inline=True)
+
+        # Department memberships
+        dept_lines: list[str] = []
+        for dept_name, guild_id in DEPARTMENT_GUILDS.items():
+            guild = self.bot.get_guild(guild_id)
+            if guild is None:
+                continue
+            dept_member = guild.get_member(member.id)
+            if dept_member is None:
+                continue
+            # Highest role (excluding @everyone which is always index 0)
+            highest = dept_member.top_role
+            if highest == guild.default_role:
+                dept_lines.append(f"• **{dept_name}** — No roles")
+            else:
+                dept_lines.append(f"• **{dept_name}** — {highest.name}")
+
+        if dept_lines:
+            embed.add_field(
+                name="Department Memberships",
+                value="\n".join(dept_lines),
+                inline=False,
+            )
 
         await ctx.send(embed=embed)
 
