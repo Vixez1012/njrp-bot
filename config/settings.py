@@ -84,6 +84,18 @@ ERLC_REMOVAL_PUNISHMENTS: list[str] = [
     "Retirement",
 ]
 
+# ─── Department Servers ──────────────────────────────────────────────────────
+# Map of department name -> Discord Guild ID.
+DEPARTMENT_GUILDS: dict[str, int] = {
+    "Department Hub": 1482782359144108152,
+    "Police Department": 1473736892431470614,
+    "State Police": 1424814688339755020,
+    "Medical Center": 1477711167580274688,
+    "Fire & Rescue": 1475593954824290345,
+    "Department of Justice": 1253324336962736190,
+    "Department of Transportation": 1479557928011960503,
+}
+
 # ─── Embed Colors ────────────────────────────────────────────────────────────
 EMBED_COLOR_PRIMARY: int = 0x2B2D31
 EMBED_COLOR_SUCCESS: int = 0x57F287

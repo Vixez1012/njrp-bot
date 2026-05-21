@@ -19,10 +19,12 @@ from discord import ui
 
 from config.settings import (
     ADMIN_PANEL_ROLE_IDS,
+    DEPARTMENT_GUILDS,
     EMBED_COLOR_PRIMARY,
     EMBED_COLOR_SUCCESS,
     EMBED_COLOR_ERROR,
     EMBED_COLOR_WARNING,
+    GUILD_ID,
     STAFF_ROLE_IDS,
 )
 from utils.embeds import success_embed, error_embed, info_embed, primary_embed
@@ -297,6 +299,19 @@ class MemberActionsView(ui.View):
             ephemeral=True,
         )
 
+    @ui.button(label="Ban from Departments", style=discord.ButtonStyle.danger, row=2)
+    async def ban_departments(self, interaction: discord.Interaction, button: ui.Button) -> None:
+        if await _reject(interaction):
+            return
+        await interaction.response.send_message(
+            embed=info_embed(
+                "Ban from Departments",
+                f"Select which servers to ban **{self.member}** from.",
+            ),
+            view=DepartmentBanSelectView(self.bot, self.member),
+            ephemeral=True,
+        )
+
     @ui.button(label="View Infractions", style=discord.ButtonStyle.secondary, row=1)
     async def view_infractions(self, interaction: discord.Interaction, button: ui.Button) -> None:
         if await _reject(interaction):
@@ -404,6 +419,100 @@ class RemoveFlagSelect(ui.Select):
             embed=success_embed("Flag Removed", f"Flag removed from {self.member.mention}."),
             ephemeral=True,
         )
+
+
+# ─── Department Ban ──────────────────────────────────────────────────────────
+
+class DepartmentBanSelectView(ui.View):
+    """Multi-select of departments (and main server) to ban a member from."""
+
+    def __init__(self, bot: NJRPBot, member: discord.Member) -> None:
+        super().__init__(timeout=120)
+        self.bot = bot
+        self.member = member
+
+        options = [
+            discord.SelectOption(label="Main Server", value=str(GUILD_ID), description="The main NJRP server"),
+        ]
+        for dept_name, guild_id in DEPARTMENT_GUILDS.items():
+            options.append(
+                discord.SelectOption(label=dept_name, value=str(guild_id))
+            )
+
+        self.add_item(DepartmentBanSelect(bot, member, options))
+
+
+class DepartmentBanSelect(ui.Select):
+    def __init__(
+        self,
+        bot: NJRPBot,
+        member: discord.Member,
+        options: list[discord.SelectOption],
+    ) -> None:
+        super().__init__(
+            placeholder="Select servers to ban from...",
+            options=options,
+            min_values=1,
+            max_values=len(options),
+        )
+        self.bot = bot
+        self.member = member
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        if await _reject(interaction):
+            return
+        await interaction.response.send_modal(
+            DepartmentBanReasonModal(self.bot, self.member, self.values)
+        )
+
+
+class DepartmentBanReasonModal(ui.Modal, title="Ban Reason"):
+    reason_input = ui.TextInput(
+        label="Reason for ban",
+        placeholder="Enter the reason...",
+        style=discord.TextStyle.paragraph,
+        required=False,
+        max_length=512,
+    )
+
+    def __init__(self, bot: NJRPBot, member: discord.Member, guild_ids: list[str]) -> None:
+        super().__init__()
+        self.bot = bot
+        self.member = member
+        self.guild_ids = [int(gid) for gid in guild_ids]
+
+    async def on_submit(self, interaction: discord.Interaction) -> None:
+        await interaction.response.defer(ephemeral=True)
+        reason = self.reason_input.value.strip() or "No reason provided"
+        results: list[str] = []
+
+        # Build a name map for nice output
+        name_map: dict[int, str] = {GUILD_ID: "Main Server"}
+        for dept_name, gid in DEPARTMENT_GUILDS.items():
+            name_map[gid] = dept_name
+
+        for gid in self.guild_ids:
+            guild = self.bot.get_guild(gid)
+            label = name_map.get(gid, str(gid))
+            if guild is None:
+                results.append(f"❌ **{label}** — Bot not in server")
+                continue
+            try:
+                await guild.ban(
+                    self.member,
+                    reason=f"Banned by {interaction.user} via admin panel: {reason}",
+                    delete_message_days=0,
+                )
+                results.append(f"✅ **{label}** — Banned")
+            except discord.Forbidden:
+                results.append(f"❌ **{label}** — Missing permissions")
+            except discord.HTTPException as exc:
+                results.append(f"❌ **{label}** — {exc.text}")
+
+        embed = primary_embed(f"Ban Results — {self.member}")
+        embed.description = "\n".join(results)
+        embed.add_field(name="Reason", value=reason, inline=False)
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
 
 # ─── Command Management ─────────────────────────────────────────────────────
